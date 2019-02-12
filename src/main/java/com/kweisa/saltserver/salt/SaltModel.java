@@ -6,21 +6,21 @@ import javax.persistence.Id;
 @Entity
 public class SaltModel {
     @Id
-    private String id;
+    private String username;
     private String password;
     private String salt;
 
     public SaltModel() {
     }
 
-    public SaltModel(String id, String password, String salt) {
-        this.id = id;
+    public SaltModel(String username, String password, String salt) {
+        this.username = username;
         this.password = password;
         this.salt = salt;
     }
 
-    public String getId() {
-        return id;
+    public String getUsername() {
+        return username;
     }
 
     public String getPassword() {
@@ -29,5 +29,13 @@ public class SaltModel {
 
     public String getSalt() {
         return salt;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setSalt(String salt) {
+        this.salt = salt;
     }
 }

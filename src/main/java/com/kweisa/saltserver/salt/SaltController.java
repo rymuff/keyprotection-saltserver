@@ -3,6 +3,7 @@ package com.kweisa.saltserver.salt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,24 +27,33 @@ public class SaltController {
         return Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA3-256").digest(message.getBytes()));
     }
 
+    @Transactional
     @PostMapping
-    public ResponseEntity createUser(@RequestParam String id, @RequestParam String password, @RequestParam String salt) throws NoSuchAlgorithmException {
-        Optional<SaltModel> optionalSaltModel = saltRepository.findById(id);
-        if (optionalSaltModel.isPresent()) {
-            return new ResponseEntity(HttpStatus.BAD_REQUEST);
-        }
+    public ResponseEntity createUser(@RequestParam String username, @RequestParam String password, @RequestParam String salt) throws NoSuchAlgorithmException {
         String hashedPassword = sha3(password);
-        SaltModel saltModel = new SaltModel(id, hashedPassword, salt);
+
+        Optional<SaltModel> optionalSaltModel = saltRepository.findById(username);
+        if (optionalSaltModel.isPresent()) {
+            SaltModel saltModel = optionalSaltModel.get();
+            saltModel.setPassword(hashedPassword);
+            saltModel.setSalt(salt);
+            System.out.println(username + hashedPassword + saltModel.getSalt());
+            return new ResponseEntity(HttpStatus.OK);
+        }
+
+        SaltModel saltModel = new SaltModel(username, hashedPassword, salt);
+        System.out.println(username + hashedPassword + salt);
         saltRepository.save(saltModel);
         return new ResponseEntity(HttpStatus.CREATED);
     }
 
     @GetMapping
-    public ResponseEntity<String> readSalt(@RequestParam String id, @RequestParam String password) throws NoSuchAlgorithmException {
-        Optional<SaltModel> optionalSaltModel = saltRepository.findById(id);
+    public ResponseEntity<String> readSalt(@RequestParam String username, @RequestParam String password) throws NoSuchAlgorithmException {
+        Optional<SaltModel> optionalSaltModel = saltRepository.findById(username);
         if (optionalSaltModel.isPresent()) {
             SaltModel saltModel = optionalSaltModel.get();
             if (saltModel.getPassword().equals(sha3(password))) {
+                System.out.println(username + password + saltModel.getSalt());
                 return new ResponseEntity<>(saltModel.getSalt(), HttpStatus.OK);
             }
         }
